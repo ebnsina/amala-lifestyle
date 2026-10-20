@@ -11,23 +11,28 @@ export const c = {
   warm: '#E8742A',
   warmSoft: '#FDEEE3',
   danger: '#B4442F',
+  dangerSoft: '#F8E7E3',
+  blue: '#3D7CB8',
+  blueSoft: '#E6EFF8',
+  plum: '#7A5AB8',
+  plumSoft: '#EFEAF8',
   protein: '#F2B233',
   fat: '#EF7B3A',
   carbs: '#6CBF47',
 };
 
-export const font = { xs: 13, sm: 15, md: 17, lg: 20, xl: 28, xxl: 40 };
+export const font = { xs: 12, sm: 13, md: 15, lg: 17, xl: 22, xxl: 32 };
 export const space = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };
 export const radius = { md: 16, lg: 24, pill: 999 };
-// Android's minimum recommended touch target is 48dp; we go a bit larger.
-export const touch = 56;
+// Android's minimum recommended touch target is 48dp.
+export const touch = 50;
 
 export const shadow = {
   shadowColor: '#1F3A2A',
-  shadowOpacity: 0.08,
-  shadowRadius: 16,
-  shadowOffset: { width: 0, height: 6 },
-  elevation: 3,
+  shadowOpacity: 0.05,
+  shadowRadius: 12,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 1,
 };
 
 // Hind Siliguri, bundled with the app (loaded in the root layout) so Bangla renders the same on every phone.

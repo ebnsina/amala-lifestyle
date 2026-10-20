@@ -1,6 +1,6 @@
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import {
-  ArrowRight01Icon, Database01Icon, InformationCircleIcon, PencilEdit02Icon, UserIcon,
+  ArrowRight01Icon, Database01Icon, FavouriteIcon, InformationCircleIcon, PencilEdit02Icon, UserIcon,
 } from '@hugeicons/core-free-icons';
 import { router, type Href } from 'expo-router';
 import { Pressable, View } from 'react-native';
@@ -13,6 +13,7 @@ import { useStore } from '@/lib/store';
 import { c, radius, space } from '@/lib/theme';
 
 const menu: { href: Href; icon: typeof UserIcon; title: string; sub: string }[] = [
+  { href: '/favourites', icon: FavouriteIcon, title: 'প্রিয় খাবার', sub: 'যেগুলোতে ♡ দিয়েছেন' },
   { href: '/data', icon: Database01Icon, title: 'ব্যাকআপ ও ফিরিয়ে আনা', sub: 'ফোনে ফাইল হিসেবে সেভ করুন' },
   { href: '/about', icon: InformationCircleIcon, title: 'অ্যাপ সম্পর্কে', sub: 'গোপনীয়তা ও নির্মাতা' },
 ];
@@ -32,9 +33,9 @@ export default function Profile() {
   return (
     <Screen top tabs>
       <View style={{ alignItems: 'center', gap: space.sm, paddingTop: space.md }}>
-        <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: c.accentSoft,
+        <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: c.accentSoft,
           alignItems: 'center', justifyContent: 'center' }}>
-          <HugeiconsIcon icon={UserIcon} color={c.accent} size={40} />
+          <HugeiconsIcon icon={UserIcon} color={c.accent} size={32} />
         </View>
         <T size="lg" bold>{goal.emoji} {goal.bn}</T>
       </View>
@@ -42,16 +43,15 @@ export default function Profile() {
       <View style={{ flexDirection: 'row', gap: space.sm }}>
         {stats.map(([k, v]) => (
           <Card key={k} style={{ flex: 1, alignItems: 'center', gap: 0 }}>
-            <T bold size="lg">{v}</T>
+            <T bold>{v}</T>
             <T size="sm" muted>{k}</T>
           </Card>
         ))}
       </View>
 
       <View style={{ backgroundColor: c.accent, borderRadius: radius.lg, padding: space.lg, alignItems: 'center' }}>
-        <T style={{ color: c.onAccent }}>আপনার দিনের আনুমানিক লক্ষ্য</T>
-        <T size="xxl" bold style={{ color: c.onAccent }}>{bn(dailyTarget(profile))}</T>
-        <T style={{ color: c.onAccent }}>ক্যালরি</T>
+        <T size="sm" style={{ color: c.onAccent }}>আপনার দিনের আনুমানিক লক্ষ্য</T>
+        <T size="xxl" bold style={{ color: c.onAccent }}>{bn(dailyTarget(profile))} <T style={{ color: c.onAccent }}>ক্যালরি</T></T>
       </View>
 
       <Card style={{ gap: 0, paddingVertical: space.xs }}>
@@ -68,8 +68,7 @@ export default function Profile() {
       </Card>
 
       <View style={{ flexDirection: 'row' }}>
-        <Button label="তথ্য বদলান" kind="secondary" onPress={() => router.push('/onboarding')}
-          icon={<HugeiconsIcon icon={PencilEdit02Icon} color={c.text} size={20} />} />
+        <Button label="তথ্য বদলান" kind="secondary" icon={PencilEdit02Icon} onPress={() => router.push('/onboarding')} />
       </View>
       <Card style={{ gap: 0, paddingVertical: space.xs }}>
         {menu.map((m, i) => (

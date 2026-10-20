@@ -21,7 +21,7 @@ export default function About() {
           alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 48 }}>🍛</Text>
         </View>
-        <T size="xl" bold>আমালা</T>
+        <T size="xl" bold>Amala Lifestyle</T>
         <T size="sm" muted>সংস্করণ {version.replace(/\d/g, (d) => bn(Number(d)))}</T>
       </View>
 

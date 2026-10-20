@@ -3,7 +3,7 @@ import { describe, expect, it } from '@jest/globals';
 import { foodById } from '@/data/foods';
 import { parseBackup } from '@/lib/backup';
 import { bmi, bmiBand, healthyRange } from '@/lib/bmi';
-import { dayKey, parseNum, qty } from '@/lib/format';
+import { dayKey, lastDays, parseNum, qty } from '@/lib/format';
 import { compareToBudget, dailyTarget, recommend } from '@/lib/nutrition';
 import type { Backup, Profile } from '@/lib/schema';
 import { matchScore } from '@/lib/search';
@@ -93,10 +93,17 @@ describe('parseBackup', () => {
     app: 'amala-lifestyle', version: 1, exportedAt: '2026-10-17T10:00:00.000Z', profile: woman,
     favourites: ['rui'], recent: [],
     meals: [{ day: '2026-10-17', slot: 'lunch', foodId: 'rui', units: 1 }],
+    prayers: { '2026-10-17': ['fajr', 'isha'] }, workouts: { '2026-10-17': ['walk'] },
+    books: [{ id: 'b1', title: 'পথের পাঁচালী', pages: 300, read: 40 }], tasks: [{ id: 't1', text: 'বাজার', done: false }],
   };
   it('accepts its own export', () => {
     const r = parseBackup(JSON.stringify(good));
     expect(r.ok && r.backup).toEqual(good);
+  });
+  it('still imports a file saved before prayers, books and tasks existed', () => {
+    const { prayers, workouts, books, tasks, ...old } = good;
+    const r = parseBackup(JSON.stringify(old));
+    expect(r.ok && r.backup).toEqual({ ...old, prayers: {}, workouts: {}, books: [], tasks: [] });
   });
   it('drops meals for unknown foods and counts them', () => {
     const r = parseBackup(JSON.stringify({ ...good, meals: [...good.meals, { ...good.meals[0], foodId: 'pizza' }] }));
@@ -106,5 +113,11 @@ describe('parseBackup', () => {
     expect(parseBackup('not json')).toEqual({ ok: false, reason: 'json' });
     expect(parseBackup(JSON.stringify({ app: 'other' }))).toEqual({ ok: false, reason: 'format' });
     expect(parseBackup(JSON.stringify({ ...good, meals: [{ ...good.meals[0], units: -1 }] })).ok).toBe(false);
+  });
+});
+
+describe('lastDays', () => {
+  it('ends today and crosses month boundaries', () => {
+    expect(lastDays(3, new Date(2026, 9, 2))).toEqual(['2026-09-30', '2026-10-01', '2026-10-02']);
   });
 });

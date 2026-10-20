@@ -5,7 +5,9 @@ import { foodById } from '@/data/foods';
 import * as db from '@/lib/db';
 import { dayKey } from '@/lib/format';
 import type { Portion } from '@/lib/nutrition';
-import { BACKUP_APP, type Backup, type MealItem, type Profile, type Slot } from '@/lib/schema';
+import {
+  BACKUP_APP, type Backup, type Book, type MealItem, type Prayer, type Profile, type Slot, type Task,
+} from '@/lib/schema';
 
 export type { Slot };
 export const slots: { id: Slot; bn: string }[] = [
@@ -45,11 +47,22 @@ type State = {
   today: Meal[];
   history: Day[];
   saveMeal: (m: Meal) => void;
+  // The meal being written right now: which meal, and the foods ticked for it.
+  slot: Slot;
+  setSlot: (s: Slot) => void;
   cooked: string[];
   setCooked: (ids: string[]) => void;
   favourites: string[];
   toggleFavourite: (id: string) => void;
   recent: string[];
+  prayers: Record<string, Prayer[]>;
+  togglePrayer: (day: string, p: Prayer) => void;
+  workouts: Record<string, string[]>;
+  toggleWorkout: (id: string) => void;
+  books: Book[];
+  setBooks: (b: Book[]) => void;
+  tasks: Task[];
+  setTasks: (t: Task[]) => void;
   exportData: () => Backup;
   importData: (b: Backup) => void;
 };
@@ -60,12 +73,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const sql = useSQLiteContext();
   const [data, setData] = useState(() => db.loadAll(sql));
   const [cooked, setCooked] = useState<string[]>([]);
+  const [slot, setSlot] = useState<Slot>(nextSlot());
   const reload = () => setData(db.loadAll(sql));
 
   const todayKey = dayKey();
   const days = [...new Set(data.items.map((i) => i.day))].filter((d) => d !== todayKey);
   const favourites = data.favourites ?? [];
   const recent = data.recent ?? [];
+  const prayers = data.prayers ?? {};
+  const workouts = data.workouts ?? {};
+  const books = data.books ?? [];
+  const tasks = data.tasks ?? [];
+  const save = (key: string, value: unknown) => { db.setSetting(sql, key, value); reload(); };
+  const flip = <T,>(xs: T[] = [], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x]);
 
   const value: State = {
     profile: data.profile,
@@ -77,14 +97,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       db.saveRecent(sql, [...new Set([...m.portions.map((p) => p.food.id), ...recent])].slice(0, 8));
       reload();
     },
-    cooked, setCooked, favourites, recent,
-    toggleFavourite: (id) => {
-      db.saveFavourites(sql, favourites.includes(id) ? favourites.filter((x) => x !== id) : [...favourites, id]);
-      reload();
-    },
+    slot, setSlot, cooked, setCooked, favourites, recent,
+    toggleFavourite: (id) => save('favourites', flip(favourites, id)),
+    prayers, togglePrayer: (day, p) => save('prayers', { ...prayers, [day]: flip(prayers[day], p) }),
+    workouts, toggleWorkout: (id) => save('workouts', { ...workouts, [todayKey]: flip(workouts[todayKey], id) }),
+    books, setBooks: (b) => save('books', b),
+    tasks, setTasks: (t) => save('tasks', t),
     exportData: () => ({
       app: BACKUP_APP, version: 1, exportedAt: new Date().toISOString(),
-      profile: data.profile, favourites, recent, meals: data.items,
+      profile: data.profile, favourites, recent, meals: data.items, prayers, workouts, books, tasks,
     }),
     importData: (b) => { db.replaceAll(sql, b); setCooked([]); reload(); },
   };

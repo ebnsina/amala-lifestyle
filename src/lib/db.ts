@@ -1,7 +1,10 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import * as v from 'valibot';
 
-import { MealItemSchema, ProfileSchema, type Backup, type MealItem, type Profile, type Slot } from '@/lib/schema';
+import {
+  BookSchema, MealItemSchema, PrayersSchema, ProfileSchema, TaskSchema, WorkoutsSchema, type Backup,
+  type MealItem, type Profile, type Slot,
+} from '@/lib/schema';
 
 const VERSION = 1;
 
@@ -41,7 +44,7 @@ function getSetting<T>(db: SQLiteDatabase, key: string, schema: v.GenericSchema<
   }
 }
 
-const setSetting = (db: SQLiteDatabase, key: string, value: unknown) =>
+export const setSetting = (db: SQLiteDatabase, key: string, value: unknown) =>
   db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', key, JSON.stringify(value));
 
 const ids = v.array(v.string());
@@ -50,6 +53,10 @@ export const loadAll = (db: SQLiteDatabase) => ({
   profile: getSetting(db, 'profile', ProfileSchema),
   favourites: getSetting(db, 'favourites', ids),
   recent: getSetting(db, 'recent', ids),
+  prayers: getSetting(db, 'prayers', PrayersSchema),
+  workouts: getSetting(db, 'workouts', WorkoutsSchema),
+  books: getSetting(db, 'books', v.array(BookSchema)),
+  tasks: getSetting(db, 'tasks', v.array(TaskSchema)),
   items: db.getAllSync<{ day: string; slot: string; food_id: string; units: number }>(
     'SELECT day, slot, food_id, units FROM meal_items ORDER BY day DESC, id',
   ).flatMap((r) => {
@@ -79,6 +86,7 @@ export function replaceAll(db: SQLiteDatabase, b: Backup) {
     if (b.profile) saveProfile(db, b.profile);
     saveFavourites(db, b.favourites);
     saveRecent(db, b.recent);
+    for (const k of ['prayers', 'workouts', 'books', 'tasks'] as const) setSetting(db, k, b[k]);
     for (const m of b.meals) {
       db.runSync('INSERT INTO meal_items (day, slot, food_id, units) VALUES (?, ?, ?, ?)', m.day, m.slot, m.foodId, m.units);
     }

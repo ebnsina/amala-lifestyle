@@ -1,116 +1,94 @@
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Calendar03Icon, ChefHatIcon, Search01Icon } from '@hugeicons/core-free-icons';
+import { Add01Icon, ArrowRight01Icon, Calendar03Icon, FavouriteIcon } from '@hugeicons/core-free-icons';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Badge, Button, Card, Note, Plate, Ring, Screen, SectionTitle, T } from '@/components/ui';
-import { categories, foodById } from '@/data/foods';
 import { bn, dateLabel, qty } from '@/lib/format';
 import { dailyTarget, kcalOf } from '@/lib/nutrition';
-import { nextSlot, slots, useStore } from '@/lib/store';
-import { c, radius, shadow, space } from '@/lib/theme';
+import { nextSlot, slotName, slots, useStore, type Slot } from '@/lib/store';
+import { c, shadow, space } from '@/lib/theme';
 
 export default function FoodHome() {
-  const { profile, today, favourites } = useStore();
+  const { profile, today, setCooked, setSlot } = useStore();
   if (!profile) return null;
 
   const target = dailyTarget(profile);
   const eaten = Math.round(today.reduce((s, m) => s + kcalOf(m.portions), 0));
   const left = target - eaten;
-  const favs = favourites.map((id) => foodById[id]).filter(Boolean);
+  // The meal that fits the time of day, or the first one still empty.
+  const open = slots.map((s) => s.id).filter((id) => !today.some((m) => m.slot === id));
+  const suggested = open.includes(nextSlot()) ? nextSlot() : open[0];
+
+  // Editing a logged meal starts from what was saved; a new one starts empty.
+  const openSlot = (slot: Slot) => {
+    setSlot(slot);
+    setCooked(today.find((m) => m.slot === slot)?.portions.map((p) => p.food.id) ?? []);
+    router.push('/cook');
+  };
 
   return (
     <Screen top tabs>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.sm }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
         <View style={{ flex: 1 }}>
           <T size="sm" muted>{dateLabel(new Date())}</T>
-          <T size="xl" bold>আজ কী <T size="xl" bold style={{ color: c.accent }}>খাবেন?</T></T>
+          <T size="xl" bold>আজকের খাবার</T>
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="আগের দিনগুলো" onPress={() => router.push('/history')}
-          style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: c.surface,
-            alignItems: 'center', justifyContent: 'center', ...shadow }}>
-          <HugeiconsIcon icon={Calendar03Icon} color={c.text} size={22} />
-        </Pressable>
+        <IconBtn label="প্রিয় খাবার" icon={FavouriteIcon} onPress={() => router.push('/favourites')} />
+        <IconBtn label="আগের দিনগুলো" icon={Calendar03Icon} onPress={() => router.push('/history')} />
       </View>
 
-      <Pressable accessibilityRole="search" onPress={() => router.push('/cook')}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, backgroundColor: c.surface,
-          borderRadius: radius.pill, paddingHorizontal: space.md, minHeight: 56, ...shadow }}>
-        <HugeiconsIcon icon={Search01Icon} color={c.muted} size={22} />
-        <T muted>খাবার খুঁজুন... (যেমন: ডাল)</T>
-      </Pressable>
-
       <Card enter={0} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-        <Ring value={eaten / target} size={104} color={left < 0 ? c.warm : c.accent}>
-          <T bold size="lg">{bn(Math.round(Math.min(1, eaten / target) * 100))}%</T>
+        <Ring value={eaten / target} size={88} stroke={9} color={left < 0 ? c.warm : c.accent}>
+          <T bold>{bn(Math.round(Math.min(1, eaten / target) * 100))}%</T>
         </Ring>
-        <View style={{ flex: 1, gap: 2 }}>
-          <T size="sm" muted>আজ আরও খেতে পারবেন প্রায়</T>
+        <View style={{ flex: 1 }}>
+          <T size="sm" muted>{left < 0 ? 'আজকের লক্ষ্যের চেয়ে বেশি' : 'আজ আরও খেতে পারবেন প্রায়'}</T>
           <T size="xl" bold style={{ color: left < 0 ? c.warm : c.accent }}>
-            {bn(Math.max(0, left))} <T muted size="sm">ক্যালরি</T>
+            {bn(Math.abs(left))} <T muted size="sm">ক্যালরি</T>
           </T>
-          <T size="sm" muted>খেয়েছেন {bn(eaten)} · লক্ষ্য {bn(target)}</T>
+          <T size="xs" muted>খেয়েছেন {bn(eaten)} · লক্ষ্য {bn(target)}</T>
         </View>
       </Card>
 
-      <Button label="আজ বাসায় কী রান্না হয়েছে?" onPress={() => router.push('/cook')}
-        icon={<HugeiconsIcon icon={ChefHatIcon} color={c.onAccent} size={22} />} />
+      {suggested
+        ? <Button label={`${slotName(suggested)} লিখুন`} icon={Add01Icon} onPress={() => openSlot(suggested)} />
+        : <Note>আজকের সব বেলা লেখা হয়ে গেছে। কোনো বেলা বদলাতে নিচে চাপুন।</Note>}
 
-      <SectionTitle title="ধরন অনুযায়ী" action="সব দেখুন" onAction={() => router.push('/cook')} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -space.md }}
-        contentContainerStyle={{ gap: space.md, paddingHorizontal: space.md, paddingVertical: space.xs }}>
-        {categories.filter((k) => k.id !== 'all').map((k) => (
-          <Pressable key={k.id} accessibilityRole="button" accessibilityLabel={k.bn}
-            onPress={() => router.push({ pathname: '/cook', params: { cat: k.id } })}
-            style={{ alignItems: 'center', gap: 6, width: 72 }}>
-            <View style={{ width: 64, height: 64, borderRadius: radius.md, backgroundColor: c.surface,
-              alignItems: 'center', justifyContent: 'center', ...shadow }}>
-              <T size="xl">{k.emoji}</T>
-            </View>
-            <T size="xs" style={{ textAlign: 'center' }}>{k.bn}</T>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      {favs.length > 0 && <SectionTitle title="আপনার প্রিয় খাবার" action="সব দেখুন" onAction={() => router.push('/favourites')} />}
-      {favs.length > 0 && <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -space.md }}
-        contentContainerStyle={{ gap: space.md, paddingHorizontal: space.md, paddingVertical: space.sm }}>
-        {favs.map((f, i) => (
-          <Card key={f.id} enter={i} onPress={() => router.push({ pathname: '/food/[id]', params: { id: f.id } })}
-            style={{ width: 160, alignItems: 'flex-start' }}>
-            <View style={{ alignSelf: 'center' }}><Plate emoji={f.emoji} size={88} /></View>
-            <Badge label={f.protein >= 10 ? 'আমিষ বেশি' : 'হালকা খাবার'} tone={f.protein >= 10 ? 'green' : 'warm'} />
-            <T bold numberOfLines={1}>{f.bn}</T>
-            <T size="sm" muted>{qty(1, f.unit)} · {bn(f.kcal)} ক্যালরি</T>
-          </Card>
-        ))}
-      </ScrollView>}
-
-      <SectionTitle title="আজ যা খেয়েছেন" />
+      <SectionTitle title="চার বেলা" />
       {slots.map(({ id, bn: name }, i) => {
         const meal = today.find((m) => m.slot === id);
-        const isNext = !meal && id === nextSlot();
         return (
-          <Card key={id} enter={i + 1} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}
-            onPress={meal ? undefined : () => router.push('/cook')}>
-            <Plate emoji={meal ? meal.portions[0].food.emoji : '🍽️'} size={52} />
+          <Card key={id} enter={i + 1} onPress={() => openSlot(id)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm + 4 }}>
+            <Plate emoji={meal ? meal.portions[0].food.emoji : '🍽️'} size={44} />
             <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
                 <T bold>{name}</T>
-                {meal ? <T size="sm" bold style={{ color: c.accent }}>{bn(Math.round(kcalOf(meal.portions)))} ক্যালরি</T>
-                  : isNext && <Badge label="এখন" tone="warm" />}
+                {!meal && id === suggested && <Badge label="এখন" tone="warm" />}
               </View>
-              <T size="sm" muted numberOfLines={2}>
-                {meal ? meal.portions.map((p) => `${p.food.bn} ${qty(p.units, p.food.unit)}`).join(' · ')
-                  : 'এখনো লেখা হয়নি'}
+              <T size="sm" muted numberOfLines={1}>
+                {meal ? meal.portions.map((p) => `${p.food.bn} ${qty(p.units, p.food.unit)}`).join(' · ') : 'চাপ দিয়ে লিখুন'}
               </T>
             </View>
+            {meal
+              ? <T size="sm" bold style={{ color: c.accent }}>{bn(Math.round(kcalOf(meal.portions)))}</T>
+              : <HugeiconsIcon icon={ArrowRight01Icon} color={c.muted} size={18} />}
           </Card>
         );
       })}
 
-      <Note>সব হিসাব আনুমানিক। রান্নার তেল আর রেসিপিভেদে কমবেশি হতে পারে।</Note>
+      <T size="xs" muted style={{ textAlign: 'center' }}>সব হিসাব আনুমানিক। তেল আর রেসিপিভেদে কমবেশি হয়।</T>
     </Screen>
   );
 }
 
+function IconBtn({ label, icon, onPress }: { label: string; icon: typeof FavouriteIcon; onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={4}
+      style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.surface,
+        alignItems: 'center', justifyContent: 'center', ...shadow }}>
+      <HugeiconsIcon icon={icon} color={c.text} size={20} />
+    </Pressable>
+  );
+}
