@@ -6,6 +6,7 @@ import { bmi, bmiBand, healthyRange } from '@/lib/bmi';
 import { dayKey, lastDays, parseNum, qty } from '@/lib/format';
 import { compareToBudget, dailyTarget, recommend } from '@/lib/nutrition';
 import type { Backup, Profile } from '@/lib/schema';
+import { streak } from '@/lib/prayer';
 import { matchScore } from '@/lib/search';
 
 const woman: Profile = {
@@ -94,6 +95,7 @@ describe('parseBackup', () => {
     favourites: ['rui'], recent: [],
     meals: [{ day: '2026-10-17', slot: 'lunch', foodId: 'rui', units: 1 }],
     prayers: { '2026-10-17': ['fajr', 'isha'] }, workouts: { '2026-10-17': ['walk'] },
+    sets: { '2026-10-17': { walk: ['0-0', '1-0'] } },
     books: [{ id: 'b1', title: 'পথের পাঁচালী', pages: 300, read: 40 }], tasks: [{ id: 't1', text: 'বাজার', done: false }],
   };
   it('accepts its own export', () => {
@@ -101,9 +103,9 @@ describe('parseBackup', () => {
     expect(r.ok && r.backup).toEqual(good);
   });
   it('still imports a file saved before prayers, books and tasks existed', () => {
-    const { prayers, workouts, books, tasks, ...old } = good;
+    const { prayers, workouts, sets, books, tasks, ...old } = good;
     const r = parseBackup(JSON.stringify(old));
-    expect(r.ok && r.backup).toEqual({ ...old, prayers: {}, workouts: {}, books: [], tasks: [] });
+    expect(r.ok && r.backup).toEqual({ ...old, prayers: {}, workouts: {}, sets: {}, books: [], tasks: [] });
   });
   it('drops meals for unknown foods and counts them', () => {
     const r = parseBackup(JSON.stringify({ ...good, meals: [...good.meals, { ...good.meals[0], foodId: 'pizza' }] }));
@@ -119,5 +121,19 @@ describe('parseBackup', () => {
 describe('lastDays', () => {
   it('ends today and crosses month boundaries', () => {
     expect(lastDays(3, new Date(2026, 9, 2))).toEqual(['2026-09-30', '2026-10-01', '2026-10-02']);
+  });
+});
+
+describe('prayer streak', () => {
+  const five = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+  const today = new Date(2026, 9, 3);
+  it('counts back from yesterday while today is unfinished', () => {
+    const log = { '2026-10-01': [...five], '2026-10-02': [...five], '2026-10-03': ['fajr' as const] };
+    expect(streak(log, today)).toBe(2);
+  });
+  it('includes today once all five are done, and nafl do not count', () => {
+    const log = { '2026-10-02': [...five], '2026-10-03': [...five, 'witr' as const], '2026-09-30': [...five] };
+    expect(streak(log, today)).toBe(2);
+    expect(streak({ '2026-10-03': ['tahajjud', 'witr'] }, today)).toBe(0);
   });
 });

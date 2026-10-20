@@ -29,3 +29,7 @@ export const lastDays = (n: number, from = new Date()) =>
   Array.from({ length: n }, (_, i) => dayKey(new Date(from.getFullYear(), from.getMonth(), from.getDate() - (n - 1 - i))));
 
 export const weekday = (key: string) => new Intl.DateTimeFormat('bn-BD', { weekday: 'short' }).format(parseDay(key));
+
+const two = new Intl.NumberFormat('bn-BD', { minimumIntegerDigits: 2 });
+// 75 → "১:১৫"
+export const clock = (seconds: number) => `${bn(Math.floor(seconds / 60))}:${two.format(seconds % 60)}`;

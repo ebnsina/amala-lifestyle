@@ -1,4 +1,4 @@
-import { Add01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
+import { Add01Icon, Delete02Icon, PencilEdit02Icon } from '@hugeicons/core-free-icons';
 import { useState } from 'react';
 import { View } from 'react-native';
 import * as v from 'valibot';
@@ -60,8 +60,13 @@ export default function Books() {
 function BookCard({ book, enter, onRead, onRemove }: {
   book: Book; enter: number; onRead: (read: number) => void; onRemove: () => void;
 }) {
+  const [typing, setTyping] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState(false);
   const done = book.read >= book.pages;
   const share = book.read / book.pages;
+  const page = typing === null ? NaN : parseNum(typing);
+  const pageOk = Number.isInteger(page) && page >= 0 && page <= book.pages;
+
   return (
     <Card enter={enter} style={{ gap: space.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
@@ -71,13 +76,35 @@ function BookCard({ book, enter, onRead, onRemove }: {
       <View style={{ height: 6, borderRadius: radius.pill, backgroundColor: c.accentSoft, overflow: 'hidden' }}>
         <View style={{ height: '100%', width: `${Math.min(100, share * 100)}%`, backgroundColor: c.accent }} />
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <T size="sm" muted>{bn(book.read)} / {bn(book.pages)} পৃষ্ঠা</T>
-        <Stepper label="পৃষ্ঠা" value={book.read} step={5} onChange={(r) => onRead(Math.min(book.pages, r))} />
-      </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        <Button kind="danger" small label="মুছুন" icon={Delete02Icon} onPress={onRemove} />
-      </View>
+
+      {typing !== null ? (
+        <View style={{ gap: space.sm }}>
+          <Input value={typing} onChangeText={setTyping} placeholder="এখন কোন পৃষ্ঠায়" keyboardType="numeric"
+            suffix={`/ ${bn(book.pages)}`} autoFocus onSubmitEditing={() => pageOk && (onRead(page), setTyping(null))} />
+          {!pageOk && typing !== '' && <T size="sm" style={{ color: c.danger }}>০ থেকে {bn(book.pages)}-এর মধ্যে লিখুন।</T>}
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <Button kind="ghost" label="বাতিল" onPress={() => setTyping(null)} />
+            <Button label="সেভ করুন" disabled={!pageOk} onPress={() => { onRead(page); setTyping(null); }} />
+          </View>
+        </View>
+      ) : (
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <T size="sm" muted>{bn(book.read)} / {bn(book.pages)} পৃষ্ঠা</T>
+          <Stepper label="পৃষ্ঠা" value={book.read} step={5} onChange={(r) => onRead(Math.min(book.pages, r))} />
+        </View>
+      )}
+
+      {typing === null && (
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: space.sm }}>
+          <Button kind="secondary" small label="পৃষ্ঠা নম্বর লিখুন" icon={PencilEdit02Icon} onPress={() => setTyping(bn(book.read))} />
+          {confirm ? (
+            <View style={{ flexDirection: 'row', gap: space.xs }}>
+              <Button kind="ghost" small label="না" onPress={() => setConfirm(false)} />
+              <Button kind="danger" small label="হ্যাঁ, মুছুন" onPress={onRemove} />
+            </View>
+          ) : <Button kind="danger" small label="মুছুন" icon={Delete02Icon} onPress={() => setConfirm(true)} />}
+        </View>
+      )}
     </Card>
   );
 }

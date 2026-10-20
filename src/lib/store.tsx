@@ -59,6 +59,8 @@ type State = {
   togglePrayer: (day: string, p: Prayer) => void;
   workouts: Record<string, string[]>;
   toggleWorkout: (id: string) => void;
+  sets: Record<string, Record<string, string[]>>;
+  setSets: (workoutId: string, done: string[]) => void;
   books: Book[];
   setBooks: (b: Book[]) => void;
   tasks: Task[];
@@ -82,6 +84,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const recent = data.recent ?? [];
   const prayers = data.prayers ?? {};
   const workouts = data.workouts ?? {};
+  const sets = data.sets ?? {};
   const books = data.books ?? [];
   const tasks = data.tasks ?? [];
   const save = (key: string, value: unknown) => { db.setSetting(sql, key, value); reload(); };
@@ -101,11 +104,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     toggleFavourite: (id) => save('favourites', flip(favourites, id)),
     prayers, togglePrayer: (day, p) => save('prayers', { ...prayers, [day]: flip(prayers[day], p) }),
     workouts, toggleWorkout: (id) => save('workouts', { ...workouts, [todayKey]: flip(workouts[todayKey], id) }),
+    sets, setSets: (id, done) => save('sets', { ...sets, [todayKey]: { ...sets[todayKey], [id]: done } }),
     books, setBooks: (b) => save('books', b),
     tasks, setTasks: (t) => save('tasks', t),
     exportData: () => ({
       app: BACKUP_APP, version: 1, exportedAt: new Date().toISOString(),
-      profile: data.profile, favourites, recent, meals: data.items, prayers, workouts, books, tasks,
+      profile: data.profile, favourites, recent, meals: data.items, prayers, workouts, sets, books, tasks,
     }),
     importData: (b) => { db.replaceAll(sql, b); setCooked([]); reload(); },
   };
