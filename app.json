@@ -39,7 +39,8 @@
           "imageWidth": 140
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -58,6 +59,12 @@
       "eas": {
         "projectId": "2b1a5645-0e43-4f4d-991f-f230e9776a2b"
       }
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/2b1a5645-0e43-4f4d-991f-f230e9776a2b"
     }
   }
 }
