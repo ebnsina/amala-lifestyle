@@ -9,6 +9,7 @@ import Animated from 'react-native-reanimated';
 import { Card, enterAt, Press, Screen, SectionTitle, T } from '@/components/ui';
 import { bn, dateLabel, dayKey } from '@/lib/format';
 import { dailyTarget, kcalOf } from '@/lib/nutrition';
+import { fard } from '@/lib/prayer';
 import { useStore } from '@/lib/store';
 import { c, radius, space } from '@/lib/theme';
 
@@ -32,7 +33,7 @@ export default function Hub() {
   const left = dailyTarget(profile) - Math.round(today.reduce((s, m) => s + kcalOf(m.portions), 0));
   const stats: [string, string, Href][] = [
     [bn(Math.max(0, left)), 'ক্যালরি বাকি', '/food'],
-    [`${bn((prayers[dayKey()] ?? []).length)}/৫`, 'নামাজ', '/prayer'],
+    [`${bn(fard.filter((p) => prayers[dayKey()]?.includes(p.id)).length)}/৫`, 'নামাজ', '/prayer'],
     [`${bn(tasks.filter((t) => t.done).length)}/${bn(tasks.length)}`, 'কাজ শেষ', '/tasks'],
   ];
 

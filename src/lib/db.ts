@@ -2,7 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import * as v from 'valibot';
 
 import {
-  BookSchema, MealItemSchema, PrayersSchema, ProfileSchema, TaskSchema, WorkoutsSchema, type Backup,
+  BookSchema, MealItemSchema, PrayersSchema, ProfileSchema, SetsSchema, TaskSchema, WorkoutsSchema, type Backup,
   type MealItem, type Profile, type Slot,
 } from '@/lib/schema';
 
@@ -55,6 +55,7 @@ export const loadAll = (db: SQLiteDatabase) => ({
   recent: getSetting(db, 'recent', ids),
   prayers: getSetting(db, 'prayers', PrayersSchema),
   workouts: getSetting(db, 'workouts', WorkoutsSchema),
+  sets: getSetting(db, 'sets', SetsSchema),
   books: getSetting(db, 'books', v.array(BookSchema)),
   tasks: getSetting(db, 'tasks', v.array(TaskSchema)),
   items: db.getAllSync<{ day: string; slot: string; food_id: string; units: number }>(
@@ -86,7 +87,7 @@ export function replaceAll(db: SQLiteDatabase, b: Backup) {
     if (b.profile) saveProfile(db, b.profile);
     saveFavourites(db, b.favourites);
     saveRecent(db, b.recent);
-    for (const k of ['prayers', 'workouts', 'books', 'tasks'] as const) setSetting(db, k, b[k]);
+    for (const k of ['prayers', 'workouts', 'sets', 'books', 'tasks'] as const) setSetting(db, k, b[k]);
     for (const m of b.meals) {
       db.runSync('INSERT INTO meal_items (day, slot, food_id, units) VALUES (?, ?, ?, ?)', m.day, m.slot, m.foodId, m.units);
     }

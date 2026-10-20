@@ -24,10 +24,14 @@ export const MealItemSchema = v.object({
 const Day = v.pipe(v.string(), v.regex(/^\d{4}-\d{2}-\d{2}$/));
 const Id = v.pipe(v.string(), v.minLength(1), v.maxLength(40));
 
-export const PrayerSchema = v.picklist(['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']);
+export const PrayerSchema = v.picklist([
+  'fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'witr', 'tahajjud', 'ishraq', 'duha', 'awwabin',
+]);
 // day → what was done that day
 export const PrayersSchema = v.record(Day, v.array(PrayerSchema));
 export const WorkoutsSchema = v.record(Day, v.array(Id));
+// day → workout → ticked sets, as "exercise-set" indexes
+export const SetsSchema = v.record(Day, v.record(Id, v.array(v.pipe(v.string(), v.regex(/^\d+-\d+$/)))));
 
 export const BookSchema = v.object({
   id: Id,
@@ -55,6 +59,7 @@ export const BackupSchema = v.object({
   // Added after v1 shipped; optional so older backup files still import.
   prayers: v.optional(PrayersSchema, {}),
   workouts: v.optional(WorkoutsSchema, {}),
+  sets: v.optional(SetsSchema, {}),
   books: v.optional(v.array(BookSchema), []),
   tasks: v.optional(v.array(TaskSchema), []),
 });

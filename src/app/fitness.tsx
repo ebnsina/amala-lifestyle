@@ -4,15 +4,22 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { Badge, Card, Note, Plate, Screen, SectionTitle, T } from '@/components/ui';
-import { workouts, type Workout } from '@/data/workouts';
+import { setCount, workouts, type Workout } from '@/data/workouts';
 import { bn, dayKey, lastDays } from '@/lib/format';
 import { useStore } from '@/lib/store';
 import { c, space } from '@/lib/theme';
 
 export default function Fitness() {
-  const { workouts: log } = useStore();
+  const { workouts: log, sets } = useStore();
   const today = log[dayKey()] ?? [];
   const activeDays = lastDays(7).filter((d) => log[d]?.length).length;
+
+  const status = (w: Workout) => {
+    if (today.includes(w.id)) return <Badge label="আজ শেষ ✓" />;
+    const n = sets[dayKey()]?.[w.id]?.length ?? 0;
+    return n ? <Badge tone="warm" label={`${bn(n)}/${bn(setCount(w))} সেট`} />
+      : <HugeiconsIcon icon={ArrowRight01Icon} color={c.muted} size={18} />;
+  };
 
   const row = (w: Workout, i: number) => (
     <Card key={w.id} enter={i} onPress={() => router.push({ pathname: '/workout/[id]', params: { id: w.id } })}
@@ -22,7 +29,7 @@ export default function Fitness() {
         <T bold>{w.bn}</T>
         <T size="sm" muted>{bn(w.minutes)} মিনিট · {w.sub}</T>
       </View>
-      {today.includes(w.id) ? <Badge label="আজ করেছেন" /> : <HugeiconsIcon icon={ArrowRight01Icon} color={c.muted} size={18} />}
+      {status(w)}
     </Card>
   );
 

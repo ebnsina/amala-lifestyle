@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Added
+- Workouts: tick each set, a rest timer between sets (with +15 seconds and skip), "tick all", and finish with only part of a workout done. The fitness list shows sets done so far.
+- Prayers: বিতর and nafl prayers (তাহাজ্জুদ, ইশরাক, চাশত, আওয়াবীন), and a count of days in a row with all five fard prayers.
+- Books: type the exact page you're on; deleting a book asks first.
 - Prayer tracker: tick the five daily prayers, see the last seven days, and fill in a day you forgot.
 - Fitness guide: walking, home, gym and stretching routines with sets, reps and form tips; mark a routine done today.
 - Book reading tracker: add a book with its page count and move your page forward or back.
