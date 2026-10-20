@@ -23,3 +23,9 @@ export const parseDay = (key: string) => {
   const [y, m, d] = key.split('-').map(Number);
   return new Date(y, m - 1, d);
 };
+
+// The last n calendar days as day keys, oldest first, ending today.
+export const lastDays = (n: number, from = new Date()) =>
+  Array.from({ length: n }, (_, i) => dayKey(new Date(from.getFullYear(), from.getMonth(), from.getDate() - (n - 1 - i))));
+
+export const weekday = (key: string) => new Intl.DateTimeFormat('bn-BD', { weekday: 'short' }).format(parseDay(key));

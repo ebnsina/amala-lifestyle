@@ -41,8 +41,13 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="welcome" options={{ headerShown: false }} />
           <Stack.Screen name="onboarding" options={{ title: '' }} />
-          <Stack.Screen name="cook" options={{ title: 'আজ কী রান্না হয়েছে?' }} />
+          <Stack.Screen name="cook" options={{ title: 'খাবার বেছে নিন' }} />
           <Stack.Screen name="plan" options={{ title: 'কতটুকু খাবেন' }} />
+          <Stack.Screen name="fitness" options={{ title: 'ফিটনেস গাইড' }} />
+          <Stack.Screen name="workout/[id]" options={{ title: '' }} />
+          <Stack.Screen name="prayer" options={{ title: 'নামাজের হিসাব' }} />
+          <Stack.Screen name="books" options={{ title: 'বই পড়া' }} />
+          <Stack.Screen name="tasks" options={{ title: 'আজকের কাজ' }} />
           <Stack.Screen name="food/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="history" options={{ title: 'আগের দিনগুলো' }} />
           <Stack.Screen name="favourites" options={{ title: 'প্রিয় খাবার' }} />

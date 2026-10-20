@@ -1,19 +1,19 @@
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { FavouriteIcon, Search01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
+import { ArrowRight01Icon, FavouriteIcon, Search01Icon } from '@hugeicons/core-free-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
-import { Button, Chip, Empty, Input, Plate, Screen, SectionTitle, T } from '@/components/ui';
+import { Button, Check, Chip, Empty, Input, Plate, Screen, SectionTitle, T } from '@/components/ui';
 import { categories, foodById, foods, type Category, type Food } from '@/data/foods';
 import { bn, qty } from '@/lib/format';
 import { matchScore } from '@/lib/search';
-import { useStore } from '@/lib/store';
-import { c, radius, shadow, space } from '@/lib/theme';
+import { slotName, useStore } from '@/lib/store';
+import { c, radius, space } from '@/lib/theme';
 
 export default function Cook() {
   const params = useLocalSearchParams<{ cat?: Category }>();
-  const { cooked, setCooked, favourites, toggleFavourite, recent } = useStore();
+  const { slot, cooked, setCooked, favourites, toggleFavourite, recent } = useStore();
   const [q, setQ] = useState('');
   const [cat, setCat] = useState<Category | 'all'>(params.cat ?? 'all');
 
@@ -35,9 +35,11 @@ export default function Cook() {
   return (
     <Screen
       footer={
-        <Button label={cooked.length ? `কতটুকু খাবেন দেখুন (${bn(cooked.length)}টি)` : 'যা রান্না হয়েছে বেছে নিন'}
+        <Button label={cooked.length ? `পরিমাণ ঠিক করুন (${bn(cooked.length)}টি)` : 'আগে খাবার বেছে নিন'}
+          icon={cooked.length ? ArrowRight01Icon : undefined}
           disabled={!cooked.length} onPress={() => router.push('/plan')} />
       }>
+      <T size="sm" muted>{slotName(slot)} · যা যা খাবেন সবগুলোতে টিক দিন</T>
       <Input pill icon={Search01Icon} value={q} onChangeText={setQ} placeholder="খাবার খুঁজুন (যেমন: ডাল, misti kumra)" />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -space.md }}
@@ -47,9 +49,9 @@ export default function Cook() {
         ))}
       </ScrollView>
 
-      {!query && cat === 'all' && (
+      {!query && cat === 'all' && quick.length > 0 && (
         <>
-          <SectionTitle title="প্রিয় ও সম্প্রতি খাওয়া" />
+          <SectionTitle title="প্রিয় ও সাম্প্রতিক" />
           {quick.map(row)}
           <SectionTitle title="সব খাবার" />
         </>
@@ -66,21 +68,18 @@ function FoodRow({ food, on, fav, onPress, onFav }: {
     <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={food.bn}
       onPress={onPress}
       style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.sm, paddingRight: space.md,
-        backgroundColor: c.surface, borderRadius: radius.lg, borderWidth: 2, borderColor: on ? c.accent : 'transparent',
-        ...shadow }}>
-      <Plate emoji={food.emoji} size={56} />
+        backgroundColor: on ? c.accentSoft : c.surface, borderRadius: radius.lg, borderWidth: 1.5,
+        borderColor: on ? c.accent : c.border }}>
+      <Plate emoji={food.emoji} size={44} />
       <View style={{ flex: 1 }}>
         <T bold>{food.bn}</T>
         <T size="sm" muted>{qty(1, food.unit)} · {bn(food.kcal)} ক্যালরি</T>
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel={fav ? 'প্রিয় থেকে সরান' : 'প্রিয়তে রাখুন'}
         onPress={onFav} hitSlop={8} style={{ padding: space.xs }}>
-        <HugeiconsIcon icon={FavouriteIcon} size={22} color={fav ? c.warm : c.border} fill={fav ? c.warm : 'none'} />
+        <HugeiconsIcon icon={FavouriteIcon} size={20} color={fav ? c.warm : c.muted} fill={fav ? c.warm : 'none'} />
       </Pressable>
-      <View style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: on ? c.accent : c.border,
-        backgroundColor: on ? c.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-        {on && <HugeiconsIcon icon={Tick02Icon} color={c.onAccent} size={18} strokeWidth={2.5} />}
-      </View>
+      <Check on={on} />
     </Pressable>
   );
 }

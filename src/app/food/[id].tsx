@@ -29,8 +29,8 @@ export default function FoodDetail() {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        <View style={{ height: 300, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 150 }}>{f.emoji}</Text>
+        <View style={{ height: 240, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 110 }}>{f.emoji}</Text>
           <SafeAreaView edges={['top']} style={{ position: 'absolute', top: 0, left: 0, right: 0,
             flexDirection: 'row', justifyContent: 'space-between', padding: space.md }}>
             <RoundBtn label="ফিরে যান" onPress={() => router.back()}>
@@ -53,16 +53,16 @@ export default function FoodDetail() {
           <Card style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ flex: 1 }}>
               <T muted>প্রতি {qty(1, f.unit)}</T>
-              <T size="xxl" bold>{bn(f.kcal)} <T muted>ক্যালরি</T></T>
+              <T size="xl" bold>{bn(f.kcal)} <T muted>ক্যালরি</T></T>
               <T size="sm" muted>দিনের লক্ষ্যের {bn(Math.round((f.kcal / target) * 100))}%</T>
             </View>
-            <Ring value={f.kcal / target} size={96} color={c.warm}><Text style={{ fontSize: 30 }}>🔥</Text></Ring>
+            <Ring value={f.kcal / target} size={80} stroke={8} color={c.warm}><Text style={{ fontSize: 24 }}>🔥</Text></Ring>
           </Card>
 
           <View style={{ flexDirection: 'row', gap: space.sm }}>
             {macros.map((m) => (
               <Card key={m.bn} style={{ flex: 1, alignItems: 'center', gap: space.xs }}>
-                <Ring value={m.share} size={72} stroke={7} color={m.color}>
+                <Ring value={m.share} size={60} stroke={6} color={m.color}>
                   <T bold size="sm">{bn(Math.round(m.share * 100))}%</T>
                 </Ring>
                 <T bold size="sm">{m.bn}</T>
@@ -77,8 +77,7 @@ export default function FoodDetail() {
 
       <SafeAreaView edges={['bottom']} style={{ position: 'absolute', left: 0, right: 0, bottom: 0,
         flexDirection: 'row', gap: space.sm, padding: space.md, backgroundColor: c.bg }}>
-        <Button kind="secondary" label={fav ? 'প্রিয় ✓' : 'প্রিয়তে রাখুন'} onPress={() => toggleFavourite(f.id)} />
-        <Button label="আজ রান্না হয়েছে" icon={<HugeiconsIcon icon={Add01Icon} color={c.onAccent} size={20} />}
+        <Button label="খাবারে যোগ করুন" icon={Add01Icon}
           onPress={() => {
             if (!cooked.includes(f.id)) setCooked([...cooked, f.id]);
             router.push('/cook');

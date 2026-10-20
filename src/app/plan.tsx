@@ -1,31 +1,56 @@
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Delete02Icon } from '@hugeicons/core-free-icons';
+import { Add01Icon, Delete02Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated, { ZoomIn, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { Pressable, ScrollView, View } from 'react-native';
 
-import { Button, Card, Chip, Note, Plate, Screen, Stepper, T } from '@/components/ui';
+import { Button, Card, Check, Chip, Empty, Note, Plate, Screen, Stepper, T } from '@/components/ui';
 import { foodById } from '@/data/foods';
 import { bn, qty } from '@/lib/format';
 import { compareToBudget, dailyTarget, kcalOf, macrosOf, recommend } from '@/lib/nutrition';
-import { nextSlot, slots, useStore, type Slot } from '@/lib/store';
+import { slotName, slots, useStore, type Slot } from '@/lib/store';
 import { c, radius, space } from '@/lib/theme';
 
 export default function Plan() {
-  const [slot, setSlot] = useState<Slot>(nextSlot());
-  return <PlanFor key={slot} slot={slot} setSlot={setSlot} />;
+  const { slot, setSlot, today, setCooked } = useStore();
+  const [done, setDone] = useState<Slot | null>(null);
+  if (!done) return <PlanFor key={slot} slot={slot} setSlot={setSlot} onSaved={() => { setDone(slot); setCooked([]); }} />;
+
+  const meal = today.find((m) => m.slot === done);
+  const next = slots.find((s) => !today.some((m) => m.slot === s.id));
+  return (
+    <Screen footer={next ? (
+      <>
+        <Button kind="ghost" label="এখন না" onPress={() => router.dismissTo('/food')} />
+        <Button label={next.bn} icon={Add01Icon}
+          onPress={() => { setSlot(next.id); router.back(); }} />
+      </>
+    ) : <Button label="ঠিক আছে" onPress={() => router.dismissTo('/food')} />}>
+      <Animated.View entering={ZoomIn.springify()} style={{ alignItems: 'center', gap: space.sm, paddingTop: space.xl }}>
+        <Check on size={72} />
+        <T size="lg" bold>{slotName(done)} লেখা হয়েছে</T>
+        {meal && <T muted>{bn(Math.round(kcalOf(meal.portions)))} ক্যালরি</T>}
+      </Animated.View>
+      <T muted style={{ textAlign: 'center' }}>
+        {next ? 'আরেক বেলার খাবার এখনই লিখে রাখতে পারেন।' : 'আজকের চার বেলাই লেখা হয়ে গেছে।'}
+      </T>
+    </Screen>
+  );
 }
 
-function PlanFor({ slot, setSlot }: { slot: Slot; setSlot: (s: Slot) => void }) {
+function PlanFor({ slot, setSlot, onSaved }: { slot: Slot; setSlot: (s: Slot) => void; onSaved: () => void }) {
   const { profile, today, cooked, setCooked, saveMeal } = useStore();
+  const saved = today.find((m) => m.slot === slot);
   const others = today.filter((m) => m.slot !== slot);
   const target = profile ? dailyTarget(profile) : 0;
   const remaining = target - others.reduce((s, m) => s + kcalOf(m.portions), 0);
   const mealsLeft = (profile?.mealsPerDay ?? 3) - others.filter((m) => m.slot !== 'snack').length;
   const rec = recommend(cooked.map((id) => foodById[id]), remaining, mealsLeft, slot === 'snack');
 
-  const [units, setUnits] = useState(() => Object.fromEntries(rec.portions.map((p) => [p.food.id, p.units])));
+  // Editing a saved meal keeps what was saved; new foods get the suggested amount.
+  const [units, setUnits] = useState(() => Object.fromEntries(rec.portions.map((p) =>
+    [p.food.id, saved?.portions.find((x) => x.food.id === p.food.id)?.units ?? p.units])));
   const portions = rec.portions.map((p) => ({ food: p.food, units: units[p.food.id] ?? 0 }))
     .filter((p) => cooked.includes(p.food.id));
   const total = Math.round(kcalOf(portions));
@@ -35,20 +60,27 @@ function PlanFor({ slot, setSlot }: { slot: Slot; setSlot: (s: Slot) => void }) 
   if (!portions.length) {
     return (
       <Screen>
-        <T muted style={{ textAlign: 'center', padding: space.lg }}>কোনো খাবার বাছাই করা নেই।</T>
-        <Button label="খাবার বেছে নিন" kind="secondary" onPress={() => router.back()} />
+        <Empty emoji="🍽️" text="কোনো খাবার বাছাই করা নেই।" />
+        <View style={{ flexDirection: 'row' }}>
+          <Button label="খাবার বেছে নিন" kind="secondary" onPress={() => router.back()} />
+        </View>
       </Screen>
     );
   }
 
   const save = () => {
     saveMeal({ slot, portions: portions.filter((p) => p.units > 0) });
+    onSaved();
+  };
+  const remove = () => {
+    saveMeal({ slot, portions: [] });
     setCooked([]);
     router.dismissTo('/food');
   };
 
   return (
-    <Screen footer={<Button label="খেয়েছি, লিখে রাখুন" onPress={save} disabled={total === 0} />}>
+    <Screen footer={<Button label={saved ? 'বদলগুলো সেভ করুন' : 'খেয়েছি, লিখে রাখুন'} icon={Tick02Icon}
+      onPress={save} disabled={total === 0} />}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -space.md }}
         contentContainerStyle={{ gap: space.sm, paddingHorizontal: space.md }}>
         {slots.map((s) => <Chip key={s.id} label={s.bn} on={s.id === slot} onPress={() => setSlot(s.id)} />)}
@@ -57,32 +89,40 @@ function PlanFor({ slot, setSlot }: { slot: Slot; setSlot: (s: Slot) => void }) 
       {rec.lowBudget ? (
         <Note tone="warn">আজকের হিসাব প্রায় শেষ। তবু না খেয়ে থাকবেন না — নিচে হালকা কিন্তু পুষ্টিকর পরিমাণ দেওয়া হলো।</Note>
       ) : (
-        <T muted>এই বেলায় প্রায় <T bold>{bn(rec.budget)} ক্যালরি</T> খেলে দিনের হিসাব ঠিক থাকবে।</T>
+        <T muted>এই বেলায় প্রায় <T bold>{bn(rec.budget)} ক্যালরি</T> খেলে দিনের হিসাব ঠিক থাকবে। দরকার হলে +/− দিয়ে বদলান।</T>
       )}
 
       {portions.map(({ food, units: u }) => (
         <Card key={food.id} style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-          <Plate emoji={food.emoji} size={48} />
+          <Plate emoji={food.emoji} size={40} />
           <View style={{ flex: 1 }}>
             <T bold>{food.bn}</T>
-            <T muted>{qty(u, food.unit)} · {bn(Math.round(food.kcal * u))} ক্যালরি</T>
+            <T size="sm" muted>{qty(u, food.unit)} · {bn(Math.round(food.kcal * u))} ক্যালরি</T>
           </View>
           <Stepper label={food.bn} value={u} step={food.step}
             onChange={(v) => setUnits((x) => ({ ...x, [food.id]: v }))} />
           <Pressable accessibilityRole="button" accessibilityLabel={`${food.bn} বাদ দিন`}
             onPress={() => setCooked(cooked.filter((id) => id !== food.id))}
-            style={{ width: 32, height: 48, alignItems: 'center', justifyContent: 'center' }}>
-            <HugeiconsIcon icon={Delete02Icon} color={c.muted} size={22} />
+            style={{ width: 32, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+            <HugeiconsIcon icon={Delete02Icon} color={c.muted} size={20} />
           </Pressable>
         </Card>
       ))}
+
+      <View style={{ flexDirection: 'row' }}>
+        <Button kind="secondary" small label="আরও খাবার যোগ করুন" icon={Add01Icon} onPress={() => router.back()} />
+      </View>
 
       <Summary total={total} budget={rec.budget} dayLeft={Math.round(remaining - total)} snack={slot === 'snack'} />
       <T size="sm" muted style={{ textAlign: 'center' }}>
         আমিষ {bn(Math.round(m.protein))} গ্রাম · শর্করা {bn(Math.round(m.carbs))} গ্রাম · চর্বি {bn(Math.round(m.fat))} গ্রাম
       </T>
 
-      <Note>এটা আনুমানিক হিসাব। তেল-মসলা ও রান্নার ধরনে কমবেশি হয়। ক্ষুধা থাকলে সবজি বা ডাল একটু বেশি নিন।</Note>
+      {saved && (
+        <View style={{ flexDirection: 'row' }}>
+          <Button kind="danger" small label="এই বেলার হিসাব মুছুন" icon={Delete02Icon} onPress={remove} />
+        </View>
+      )}
     </Screen>
   );
 }
@@ -90,7 +130,7 @@ function PlanFor({ slot, setSlot }: { slot: Slot; setSlot: (s: Slot) => void }) 
 const look = {
   near: { color: c.accent, soft: c.accentSoft },
   over: { color: c.warm, soft: c.warmSoft },
-  under: { color: '#3D7CB8', soft: '#E6EFF8' },
+  under: { color: c.blue, soft: c.blueSoft },
 };
 
 // Suggested vs picked, the difference in words, and what it leaves for the rest of the day.

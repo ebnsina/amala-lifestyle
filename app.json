@@ -1,18 +1,15 @@
 {
   "expo": {
-    "name": "আমালা",
+    "name": "Amala Lifestyle",
     "slug": "amala-lifestyle",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "amalalifestyle",
     "userInterfaceStyle": "light",
-    "ios": {
-      "icon": "./assets/expo.icon"
-    },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FBF7F0",
+        "backgroundColor": "#2E7D4F",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -37,9 +34,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FBF7F0",
+          "backgroundColor": "#F5F8F4",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 140
         }
       ],
       "expo-sqlite"
@@ -47,6 +44,20 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "headers": {
+          "Cross-Origin-Embedder-Policy": "credentialless",
+          "Cross-Origin-Opener-Policy": "same-origin"
+        },
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "2b1a5645-0e43-4f4d-991f-f230e9776a2b"
+      }
     }
   }
 }

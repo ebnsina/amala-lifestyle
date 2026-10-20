@@ -1,5 +1,5 @@
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Add01Icon, MinusSignIcon } from '@hugeicons/core-free-icons';
+import { Add01Icon, MinusSignIcon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps, type TextProps, type TextStyle,
@@ -77,16 +77,36 @@ export function Card({ children, style, onPress, enter }: {
   );
 }
 
-export function Button({ label, onPress, kind = 'primary', disabled, icon }: {
-  label: string; onPress: () => void; kind?: 'primary' | 'secondary'; disabled?: boolean; icon?: ReactNode;
+// primary = the one main action; secondary = another real choice; ghost = low-key; danger = removes something.
+const buttonLook = {
+  primary: { bg: c.accent, ink: c.onAccent, border: c.accent },
+  secondary: { bg: c.accentSoft, ink: c.accent, border: c.accentSoft },
+  ghost: { bg: 'transparent', ink: c.text, border: c.border },
+  danger: { bg: 'transparent', ink: c.danger, border: c.dangerSoft },
+};
+
+export function Button({ label, onPress, kind = 'primary', disabled, icon, small }: {
+  label: string; onPress: () => void; kind?: keyof typeof buttonLook; disabled?: boolean;
+  icon?: Parameters<typeof HugeiconsIcon>[0]['icon']; small?: boolean;
 }) {
-  const primary = kind === 'primary';
+  const look = buttonLook[kind];
   return (
     <Press accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress}
-      style={[s.button, primary ? { backgroundColor: c.accent } : s.secondary, { opacity: disabled ? 0.45 : 1 }]}>
-      {icon}
-      <T bold style={{ color: primary ? c.onAccent : c.text, textAlign: 'center' }}>{label}</T>
+      style={[s.button, { backgroundColor: look.bg, borderColor: look.border, opacity: disabled ? 0.45 : 1,
+        ...(small ? s.buttonSmall : { flex: 1 }) }]}>
+      {icon && <HugeiconsIcon icon={icon} color={look.ink} size={small ? 16 : 20} />}
+      <T bold size={small ? 'sm' : 'md'} style={{ color: look.ink, textAlign: 'center' }}>{label}</T>
     </Press>
+  );
+}
+
+export function Check({ on, size = 26 }: { on: boolean; size?: number }) {
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: 2,
+      borderColor: on ? c.accent : c.border, backgroundColor: on ? c.accent : 'transparent',
+      alignItems: 'center', justifyContent: 'center' }}>
+      {on && <HugeiconsIcon icon={Tick02Icon} color={c.onAccent} size={size * 0.6} strokeWidth={2.5} />}
+    </View>
   );
 }
 
@@ -195,7 +215,7 @@ export function Input({ suffix, icon, pill, style, onFocus, onBlur, ...rest }: T
       <TextInput placeholderTextColor={c.muted} accessibilityLabel={rest.placeholder} {...rest}
         onFocus={(e) => { setFocused(true); onFocus?.(e); }}
         onBlur={(e) => { setFocused(false); onBlur?.(e); }}
-        style={[{ flex: 1, minWidth: 0, minHeight: touch, fontFamily: family, fontSize: font.lg, color: c.text },
+        style={[{ flex: 1, minWidth: 0, minHeight: touch, fontFamily: family, fontSize: font.md, color: c.text },
           webNoOutline, style]} />
       {suffix && <T muted>{suffix}</T>}
     </View>
@@ -205,7 +225,7 @@ export function Input({ suffix, icon, pill, style, onFocus, onBlur, ...rest }: T
 export function SectionTitle({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: space.sm }}>
-      <T size="lg" bold>{title}</T>
+      <T bold>{title}</T>
       {action && (
         <Pressable onPress={onAction} hitSlop={12} accessibilityRole="button">
           <T size="sm" bold style={{ color: c.accent }}>{action}</T>
@@ -226,7 +246,7 @@ export function Note({ children, tone = 'info' }: { children: ReactNode; tone?: 
 export function Empty({ emoji, text }: { emoji: string; text: string }) {
   return (
     <View style={{ alignItems: 'center', gap: space.sm, padding: space.xl }}>
-      <Plate emoji={emoji} size={88} />
+      <Plate emoji={emoji} size={72} />
       <T muted style={{ textAlign: 'center' }}>{text}</T>
     </View>
   );
@@ -238,10 +258,10 @@ const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unknow
 const s = StyleSheet.create({
   footer: { paddingHorizontal: space.md, paddingTop: space.sm, paddingBottom: space.sm, backgroundColor: c.bg },
   card: { backgroundColor: c.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm, ...shadow },
-  button: { flex: 1, minHeight: touch, borderRadius: radius.pill, paddingHorizontal: space.lg,
+  button: { minHeight: touch, borderRadius: radius.pill, paddingHorizontal: space.lg, borderWidth: 1.5,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm },
-  secondary: { backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
-  chip: { minHeight: 44, paddingHorizontal: space.md, borderRadius: radius.pill, borderWidth: 1,
+  buttonSmall: { minHeight: 40, paddingHorizontal: space.md, gap: 6 },
+  chip: { minHeight: 40, paddingHorizontal: space.md, borderRadius: radius.pill, borderWidth: 1,
     borderColor: c.border, backgroundColor: c.surface, justifyContent: 'center' },
   choice: { minHeight: touch + 8, flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md,
     borderRadius: radius.md, borderWidth: 1.5, borderColor: c.border, backgroundColor: c.surface },
